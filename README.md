@@ -20,11 +20,14 @@ Pontos localizados no interior do conjunto convergem lentamente, demandando inva
 
 ```text
 .
-├── Makefile        # Regras de compilação automatizada com gcc (-O3), execução e limpeza
+├── Makefile        # Regras de compilação (gcc -O3), execução, validação e limpeza
 ├── README.md       # Documentação técnica e arquitetural do projeto
-├── main.c          # Ponto de entrada, medição de tempo de alta precisão e orquestração
-├── mandelbrot.c    # Implementação da alocação contígua, mapeamento complexo e rotina de cálculo
-└── mandelbrot.h    # Definição de constantes globais, estrutura ImageBuffer e protótipos
+├── main.c          # Ponto de entrada, medição de tempo e orquestração de I/O
+├── mandelbrot.c    # Alocação contígua, mapeamento complexo e rotina de cálculo serial
+├── mandelbrot.h    # Constantes globais, estrutura ImageBuffer e protótipos
+├── io_utils.c      # Exportação PGM/PPM e matriz binária int32 (row-major)
+├── io_utils.h      # Interface do módulo de Entrada/Saída
+└── validate.py     # Comparação pixel a pixel entre matrizes binárias
 ```
 
 ---
@@ -43,7 +46,7 @@ A tabela a seguir consolida os parâmetros adotados para o caso base de referên
 | **Aritmética** | Ponto flutuante duplo | Precisão de 64 bits (`double`, padrão IEEE 754) |
 | **Representação em Memória** | `int32_t` contíguo | Vetor unidimensional organizado em ordem estrita *Row-Major* (64 MB) |
 | **Temporização** | `CLOCK_MONOTONIC` | Resolução em nanossegundos isolando a fase de cálculo das rotinas de I/O |
-| **Formatos de Saída** | Binário (`.bin`) / PGM | Matriz bruta de contagens de iterações e mapa visual em escala de cinza |
+| **Formatos de Saída** | Binário (`.bin`) / PGM / PPM | Matriz bruta de contagens e mapas visuais em escala de cinza e RGB |
 
 ---
 
@@ -53,6 +56,7 @@ A tabela a seguir consolida os parâmetros adotados para o caso base de referên
 - Compilador C em conformidade com o padrão C99 ou superior (`gcc`).
 - Utilitário de compilação `make`.
 - Sistema operacional compatível com padrões POSIX (com suporte a `<time.h>` e `clock_gettime`).
+- Interpretador Python 3 (apenas a biblioteca padrão) para o validador de corretude.
 
 ### Instruções de Compilação
 
@@ -71,7 +75,7 @@ make clean && make
 Caso seja necessário compilar manualmente sem o auxílio do `make`:
 
 ```bash
-gcc -std=c99 -O3 -Wall -Wextra main.c mandelbrot.c -o mandelbrot
+gcc -std=c99 -O3 -Wall -Wextra main.c mandelbrot.c io_utils.c -o mandelbrot -lm
 ```
 
 ### Instruções de Execução
@@ -94,14 +98,17 @@ make run
 
 O pipeline do projeto contempla duas representações distintas para os dados processados:
 
+A versão serial grava três artefatos (fora da medição de tempo): `mandelbrot_serial.bin`, `mandelbrot_serial.pgm` e `mandelbrot_serial.ppm`.
+
 1. **Matriz Binária de Contagens (`.bin` / Raw Binary):**
-   - Vetor unidimensional contíguo composto por elementos inteiros de 32 bits com sinal (`int32_t`), indexados estritamente na convenção *Row-Major* (`indice = y * width + x`).
+   - Vetor unidimensional contíguo composto por elementos inteiros de 32 bits com sinal (`int32_t`), indexados estritamente na convenção *Row-Major* (`indice = y * width + x`), sem cabeçalho.
    - Cada posição armazena o número exato de iterações necessárias para atingir o critério de escape ou o valor `MAX_ITER` caso o ponto pertença ao conjunto.
-   - Otimizado para máxima largura de banda de I/O em disco, evitando a sobrecarga de serialização textual e facilitando a ingestão direta em scripts analíticos.
+   - Tamanho do arquivo: `WIDTH * HEIGHT * 4` bytes (64 MiB no caso base 4096×4096).
+   - Referência canônica para o validador `validate.py`.
 
 2. **Arquivo de Inspeção Visual (Netpbm - PGM/PPM):**
-   - Formato gráfico simples sem compressão (*Portable Graymap* ou *Portable Pixmap*), permitindo inspeção visual imediata da geometria fractal por visualizadores nativos do sistema operacional.
-   - Os valores inteiros de escape são mapeados para intensidades de luminosidade ou paletas de cores perceptualmente lineares.
+   - PGM P5 (escala de cinza) e PPM P6 (RGB com paleta HSV cíclica), sem compressão, para conferência visual da geometria fractal.
+   - Pixels no interior do conjunto (`MAX_ITER`) são mapeados para preto; os demais recebem intensidade/cor proporcional ao número de iterações.
 
 ---
 
@@ -111,6 +118,19 @@ Para certificar que as versões paralelas e otimizadas preservem a integridade n
 
 - **Concordância Global:** Espera-se igualdade exata na quase totalidade dos pontos amostrados da matriz de contagens.
 - **Tolerância de Fronteira:** Admite-se uma discrepância de no máximo **1 iteração** em até **0,01% dos pixels totais**, restrita estritamente às regiões limítrofes do fractal. Essa tolerância acomoda variações legítimas de arredondamento numérico decorrentes de fusão de operações (*Fused Multiply-Add* - FMA), vetorização SIMD, reordenação aritmética pelo compilador ou diferenças de precisão em unidades de execução de ponto flutuante em GPUs.
+
+O script `validate.py` lê duas matrizes `.bin` (int32, row-major, sem cabeçalho) e aplica esses critérios. Código de saída: `0` se aprovado, `1` se reprovado, `2` em erro de leitura.
+
+```bash
+# Após gerar mandelbrot_serial.bin (make run) e a saída da versão paralela:
+python3 validate.py mandelbrot_serial.bin mandelbrot_omp.bin
+
+# Dimensões customizadas, modo verboso e tolerância explícita:
+python3 validate.py mandelbrot_serial.bin mandelbrot_cuda.bin --width 4096 --height 4096 --verbose
+
+# Sanidade: comparar a referência serial consigo mesma
+make validate
+```
 
 ---
 
