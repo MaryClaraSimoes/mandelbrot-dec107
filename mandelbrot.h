@@ -71,10 +71,33 @@ void pixel_to_complex(int px, int py, int width, int height, double *cr, double 
 double get_wtime(void);
 
 /**
- * @brief Função responsável pelo cálculo do Conjunto de Mandelbrot.
- *        Neste módulo de infraestrutura, atua como stub/mock preenchendo a matriz.
- * 
- * @param img Ponteiro para o ImageBuffer a ser processado.
+ * @brief Calcula o Conjunto de Mandelbrot para todos os pixels da imagem.
+ *
+ * @param img Buffer de imagem já alocado (data, width, height inicializados).
+ *            Função não faz nada se img ou img->data forem NULL.
+ *
+ * Para cada pixel (px, py), obtém o número complexo c = cr + ci*I
+ * correspondente via discretização linear do plano complexo (ver
+ * pixel_to_complex), e itera a recorrência:
+ *
+ *   Z0 = 0
+ *   Z{n+1} = Z{n}² + c
+ *
+ * até que |Z|² > 4 (escape) ou até atingir MAX_ITER iterações.
+ *
+ * Dedução da recorrência em termos de partes real/imaginária
+ * (Z{n}² == (zr + ziI)², c == (cr + ciI)):
+ *
+ *   (zr + ziI)² = zr² + 2(zr·zi)I + zi²I²   {I² = -1}
+ *              => (zr² - zi²) + 2(zr·zi)I
+ *
+ *   Portanto:
+ *     zr{n+1} = zr² - zi² + cr
+ *     zi{n+1} = 2(zr·zi) + ci
+ *
+ * O resultado (número de iterações até o escape, ou MAX_ITER se o ponto
+ * nunca escapar) é armazenado em img->data, percorrido em ordem row-major
+ * (linha por linha, py externo e px interno).
  */
 void compute_mandelbrot(ImageBuffer *img);
 
