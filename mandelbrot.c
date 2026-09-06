@@ -79,20 +79,29 @@ double get_wtime(void) {
 }
 
 /**
- * @brief Mock temporário para cálculo do Conjunto de Mandelbrot.
- * 
- * Percorre a matriz estritamente em ordem Row-Major (linha por linha)
- * e inicializa cada posição com 0, demonstrando localidade de referência espacial.
+ * Ver mandelbrot.h para documentação da interface.
  */
 void compute_mandelbrot(ImageBuffer *img) {
     if (img == NULL || img->data == NULL) {
         return;
     }
 
-    for (int y = 0; y < img->height; y++) {
-        size_t row_offset = (size_t)y * (size_t)img->width;
-        for (int x = 0; x < img->width; x++) {
-            img->data[row_offset + x] = 0;
+    for (int py = 0; py < img->height; py++) {
+        for (int px = 0; px < img->width; px++) {    
+            double zr = 0.0, zi = 0.0, cr = 0.0, ci = 0.0;
+            int iter = 0;
+
+            pixel_to_complex(px, py, img->width, img->height, &cr, &ci);
+
+            while (iter < MAX_ITER && (zr*zr + zi*zi) <= 4.0) {
+                double next_zr = (zr*zr) - (zi*zi) + cr;
+                double next_zi = 2*(zr*zi) + ci;
+                zr = next_zr;
+                zi = next_zi;
+                iter++;
+            }
+
+            img->data[(size_t)py * img->width + px] = iter;
         }
     }
 }
