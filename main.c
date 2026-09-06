@@ -1,4 +1,5 @@
 #include "mandelbrot.h"
+#include "io_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -40,7 +41,24 @@ int main(void) {
     /* 3. Exibicao do tempo decorrido com 4 casas decimais */
     printf("Tempo de calculo: %.4f segundos\n", elapsed_time);
 
-    /* 4. Desalocacao de recursos */
+    /* 4. Exportação dos dados (fora da medição de tempo) */
+    printf("\nExportando resultados...\n");
+
+    if (export_binary(img, "mandelbrot_serial.bin") != 0) {
+        fprintf(stderr, "Aviso: falha ao exportar matriz binaria.\n");
+    }
+
+    if (export_pgm(img, "mandelbrot_serial.pgm") != 0) {
+        fprintf(stderr, "Aviso: falha ao exportar imagem PGM.\n");
+    }
+
+    if (export_ppm(img, "mandelbrot_serial.ppm") != 0) {
+        fprintf(stderr, "Aviso: falha ao exportar imagem PPM.\n");
+    }
+
+    printf("\nExportacao concluida.\n");
+
+    /* 5. Desalocacao de recursos */
     free_image_buffer(img);
 
     return EXIT_SUCCESS;

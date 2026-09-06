@@ -53,3 +53,11 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Binário do projeto
+mandelbrot
+
+# Saídas geradas (matriz de iterações e imagens Netpbm)
+*.bin
+*.pgm
+*.ppm
