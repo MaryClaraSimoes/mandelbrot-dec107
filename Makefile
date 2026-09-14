@@ -1,40 +1,25 @@
-CC = gcc
-CFLAGS = -std=c99 -O3 -Wall -Wextra
-LDFLAGS = -lm
-
-TARGET = mandelbrot
-SRCS = main.c mandelbrot.c io_utils.c
-OBJS = $(SRCS:.c=.o)
-
 PYTHON = python3
-SERIAL_BIN = mandelbrot_serial.bin
 
-all: $(TARGET)
+.PHONY: all serial openmp run-serial run-openmp validate clean
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+all: serial openmp
 
-main.o: main.c mandelbrot.h io_utils.h
-	$(CC) $(CFLAGS) -c $< -o $@
+serial:
+	$(MAKE) -C serial
 
-mandelbrot.o: mandelbrot.c mandelbrot.h
-	$(CC) $(CFLAGS) -c $< -o $@
+openmp:
+	$(MAKE) -C openmp
 
-io_utils.o: io_utils.c io_utils.h mandelbrot.h
-	$(CC) $(CFLAGS) -c $< -o $@
+run-serial: serial
+	$(MAKE) -C serial run
 
-run: $(TARGET)
-	./$(TARGET)
+run-openmp: openmp
+	$(MAKE) -C openmp run
 
-# Auto-comparação da referência serial (sanidade do validador).
-validate: $(SERIAL_BIN) validate.py
-	$(PYTHON) validate.py $(SERIAL_BIN) $(SERIAL_BIN)
-
-$(SERIAL_BIN): $(TARGET)
-	./$(TARGET)
+# Roda as duas versões e compara as saídas binárias (corretude, Secao 5.5)
+validate: run-serial run-openmp validate.py
+	$(PYTHON) validate.py serial/mandelbrot_serial.bin openmp/mandelbrot_omp.bin
 
 clean:
-	rm -f $(OBJS) $(TARGET)
-	rm -f *.pgm *.ppm *.bin
-
-.PHONY: all run clean validate
+	$(MAKE) -C serial clean
+	$(MAKE) -C openmp clean
