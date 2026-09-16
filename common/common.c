@@ -3,6 +3,7 @@
 #include "mandelbrot.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 /**
@@ -10,8 +11,7 @@
  *
  * Aloca a estrutura controladora e um bloco contíguo de memória para armazenar
  * `width * height` elementos do tipo int32_t, garantindo contiguidade espacial.
- * Em caso de falha de alocação de qualquer um dos blocos, garante a liberação
- * adequada e retorna NULL.
+ * Inicializa os parâmetros com os valores padrão (Input Padrão, Seção 5.2).
  */
 ImageBuffer* create_image_buffer(int width, int height) {
     if (width <= 0 || height <= 0) {
@@ -34,6 +34,11 @@ ImageBuffer* create_image_buffer(int width, int height) {
 
     img->width = width;
     img->height = height;
+    img->max_iter = DEFAULT_MAX_ITER;
+    img->re_min = DEFAULT_RE_MIN;
+    img->re_max = DEFAULT_RE_MAX;
+    img->im_min = DEFAULT_IM_MIN;
+    img->im_max = DEFAULT_IM_MAX;
 
     return img;
 }
@@ -52,20 +57,60 @@ void free_image_buffer(ImageBuffer *img) {
 }
 
 /**
+ * @brief Configura o cenário de execução no ImageBuffer (Seções 5.2 e 5.3).
+ */
+int configure_scenario(ImageBuffer *img, const char *scenario_name) {
+    if (img == NULL) {
+        return -1;
+    }
+
+    if (scenario_name == NULL || strcmp(scenario_name, "padrao") == 0 ||
+        strcmp(scenario_name, "default") == 0 || strlen(scenario_name) == 0) {
+        /* Input Padrão (Seção 5.2): Re in [-2.0, 1.0], Im in [-1.5, 1.5], MAX_ITER = 1000 */
+        img->re_min = DEFAULT_RE_MIN;
+        img->re_max = DEFAULT_RE_MAX;
+        img->im_min = DEFAULT_IM_MIN;
+        img->im_max = DEFAULT_IM_MAX;
+        img->max_iter = DEFAULT_MAX_ITER;
+        return 0;
+    }
+
+    if (strcmp(scenario_name, "seahorse") == 0) {
+        /*
+         * Caso de estresse: Vale dos Cavalos-Marinhos (Seção 5.3)
+         * Centro: (-0.743643887, 0.131825904), largura = 0.003, MAX_ITER = 5000
+         */
+        double center_r = -0.743643887;
+        double center_i = 0.131825904;
+        double width_domain = 0.003;
+        double aspect = (double)img->height / (double)img->width;
+        double height_domain = width_domain * aspect;
+
+        img->re_min = center_r - (width_domain / 2.0);
+        img->re_max = center_r + (width_domain / 2.0);
+        img->im_min = center_i - (height_domain / 2.0);
+        img->im_max = center_i + (height_domain / 2.0);
+        img->max_iter = 5000;
+        return 0;
+    }
+
+    fprintf(stderr, "Aviso: cenario desconhecido '%s', utilizando 'padrao'.\n", scenario_name);
+    return -1;
+}
+
+/**
  * @brief Mapeamento linear de coordenadas de tela (px, py) para o plano complexo (cr, ci).
  *
- * Fórmulas aplicadas:
- *   cr = RE_MIN + ((double)px / (width - 1)) * (RE_MAX - RE_MIN)
- *   ci = IM_MIN + ((double)py / (height - 1)) * (IM_MAX - IM_MIN)
+ * Utiliza os parâmetros do domínio (re_min, re_max, im_min, im_max) contidos no ImageBuffer.
  */
-void pixel_to_complex(int px, int py, int width, int height, double *cr, double *ci) {
-    if (cr != NULL) {
-        double factor_x = (width > 1) ? ((double)px / (double)(width - 1)) : 0.0;
-        *cr = RE_MIN + factor_x * (RE_MAX - RE_MIN);
+void pixel_to_complex(int px, int py, const ImageBuffer *img, double *cr, double *ci) {
+    if (cr != NULL && img != NULL) {
+        double factor_x = (img->width > 1) ? ((double)px / (double)(img->width - 1)) : 0.0;
+        *cr = img->re_min + factor_x * (img->re_max - img->re_min);
     }
-    if (ci != NULL) {
-        double factor_y = (height > 1) ? ((double)py / (double)(height - 1)) : 0.0;
-        *ci = IM_MIN + factor_y * (IM_MAX - IM_MIN);
+    if (ci != NULL && img != NULL) {
+        double factor_y = (img->height > 1) ? ((double)py / (double)(img->height - 1)) : 0.0;
+        *ci = img->im_min + factor_y * (img->im_max - img->im_min);
     }
 }
 
