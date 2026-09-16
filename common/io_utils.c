@@ -69,15 +69,16 @@ int export_pgm(const ImageBuffer *img, const char *filename) {
     }
 
     /*
-     * Mapeamento linear: iterações [0, MAX_ITER) -> luminosidade [0, 255).
-     * Pixels no interior do conjunto (iter == MAX_ITER) recebem preto (0).
+     * Mapeamento linear: iterações [0, max_iter) -> luminosidade [0, 255).
+     * Pixels no interior do conjunto (iter == max_iter) recebem preto (0).
      */
+    int max_iter = (img->max_iter > 0) ? img->max_iter : DEFAULT_MAX_ITER;
     for (size_t i = 0; i < total_pixels; i++) {
         int32_t iter = img->data[i];
-        if (iter >= MAX_ITER) {
+        if (iter >= max_iter) {
             pixels[i] = 0;
         } else {
-            pixels[i] = (unsigned char)(255.0 * (double)iter / (double)MAX_ITER);
+            pixels[i] = (unsigned char)(255.0 * (double)iter / (double)max_iter);
         }
     }
 
@@ -127,15 +128,16 @@ int export_ppm(const ImageBuffer *img, const char *filename) {
      * de iterações, produzindo bandas cromáticas distintas que evidenciam
      * a velocidade de escape em cada região do fractal.
      */
+    int max_iter = (img->max_iter > 0) ? img->max_iter : DEFAULT_MAX_ITER;
     for (size_t i = 0; i < total_pixels; i++) {
         int32_t iter = img->data[i];
-        if (iter >= MAX_ITER) {
+        if (iter >= max_iter) {
             /* Interior do conjunto: preto */
             pixels[i * 3 + 0] = 0;
             pixels[i * 3 + 1] = 0;
             pixels[i * 3 + 2] = 0;
         } else {
-            double t = (double)iter / (double)MAX_ITER;
+            double t = (double)iter / (double)max_iter;
             double hue = fmod(360.0 * t * 5.0, 360.0);  /* ciclos de matiz */
             double sat = 0.85;
             double val = 0.6 + 0.4 * t;                  /* brilho crescente */
