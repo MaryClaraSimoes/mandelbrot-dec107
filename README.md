@@ -133,7 +133,7 @@ A tabela a seguir consolida os parâmetros adotados para o caso base de referên
 | **Região Real (Re)** | `[-2.0, 1.0]` | Intervalo do eixo real no plano complexo |
 | **Região Imaginária (Im)** | `[-1.5, 1.5]` | Intervalo do eixo imaginário no plano complexo |
 | **Limite de Iterações** | 1000 (`MAX_ITER`) | Critério de corte temporal para pontos não divergentes |
-| **Critério de Escape** | $\|z\|^2 > 4.0$ | Limite euclidiano de divergência em dupla precisão |
+| **Critério de Escape** | \|z\|² > 4.0 | Limite euclidiano de divergência em dupla precisão |
 | **Aritmética** | Ponto flutuante duplo | Precisão de 64 bits (`double`, padrão IEEE 754) |
 | **Representação em Memória** | `int32_t` contíguo | Vetor unidimensional organizado em ordem estrita *Row-Major* (64 MB) |
 | **Temporização (serial)** | `CLOCK_MONOTONIC` | Resolução em nanossegundos isolando a fase de cálculo das rotinas de I/O |
