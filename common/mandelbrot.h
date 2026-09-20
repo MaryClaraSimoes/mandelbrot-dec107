@@ -16,6 +16,12 @@
 #define IM_MIN    -1.5
 #define IM_MAX     1.5
 
+/* Caso de desbalanceamento acentuado (enunciado, seção 5.3): vale dos cavalos-marinhos. */
+#define SEAHORSE_RE_CENTER  -0.743643887
+#define SEAHORSE_IM_CENTER   0.131825904
+#define SEAHORSE_RE_WIDTH     3.0e-3
+#define SEAHORSE_MAX_ITER     5000
+
 /* ========================================================================== */
 /* Estrutura de Armazenamento da Imagem                                       */
 /* ========================================================================== */
@@ -30,6 +36,39 @@ typedef struct {
     int height;
     int32_t *data;
 } ImageBuffer;
+
+/**
+ * @brief Parâmetros de uma execução do benchmark (resolução, domínio e MAX_ITER).
+ *
+ * Os macros WIDTH, HEIGHT, MAX_ITER, RE_MIN/RE_MAX e IM_MIN/IM_MAX permanecem
+ * como valores padrão do input oficial (seção 5.2). Esta estrutura permite
+ * que o mapeamento, o kernel e a coloração usem um conjunto de valores por
+ * execução, em vez de ler as macros globais.
+ */
+typedef struct {
+    int width;
+    int height;
+    int max_iter;
+    double re_min;
+    double re_max;
+    double im_min;
+    double im_max;
+} MandelbrotParams;
+
+/**
+ * @brief Estatísticas de carga por thread (versão OpenMP).
+ *
+ * Tempos medidos no trabalho de cada thread, sem a espera na barreira
+ * do laço. O fator é t_max / t_mean (1.0 = carga perfeitamente equilibrada).
+ * A versão serial ignora este argumento (passe NULL).
+ */
+typedef struct {
+    int nthreads;
+    double t_min;
+    double t_max;
+    double t_mean;
+    double factor;
+} LoadBalanceStats;
 
 /* ========================================================================== */
 /* Protótipos das Funções do Módulo                                           */
@@ -52,16 +91,38 @@ ImageBuffer* create_image_buffer(int width, int height);
 void free_image_buffer(ImageBuffer *img);
 
 /**
+ * @brief Preenche params com os valores padrão do input oficial (seção 5.2).
+ *
+ * @param params Ponteiro para a estrutura a ser inicializada. Não faz nada se for NULL.
+ */
+void mandelbrot_params_init_default(MandelbrotParams *params);
+
+/**
+ * @brief Interpreta argumentos de linha de comando sobre params já inicializado.
+ *
+ * Flags reconhecidas: --width, --height, --max-iter, --re-min, --re-max,
+ * --im-min, --im-max, --preset {full|seahorse}, --help / -h. Valores omitidos
+ * preservam o conteúdo prévio de params (em geral, os defaults da seção 5.2).
+ * Flags posteriores sobrescrevem as anteriores (ex.: --preset seahorse --width 256).
+ *
+ * @return  0 em sucesso; 1 se --help foi pedido; -1 em erro de sintaxe/validação.
+ */
+int mandelbrot_params_parse_args(int argc, char **argv, MandelbrotParams *params);
+
+/**
  * @brief Realiza o mapeamento linear das coordenadas de tela (pixels) para o plano complexo.
- * 
+ *
+ * Fórmulas:
+ *   cr = re_min + (px / (width - 1)) * (re_max - re_min)
+ *   ci = im_min + (py / (height - 1)) * (im_max - im_min)
+ *
  * @param px     Coordenada X na imagem (coluna, 0 <= px < width).
  * @param py     Coordenada Y na imagem (linha, 0 <= py < height).
- * @param width  Largura total da imagem.
- * @param height Altura total da imagem.
+ * @param params Resolução e domínio do plano complexo (não pode ser NULL).
  * @param cr     Ponteiro para armazenar a parte real correspondente.
  * @param ci     Ponteiro para armazenar a parte imaginária correspondente.
  */
-void pixel_to_complex(int px, int py, int width, int height, double *cr, double *ci);
+void pixel_to_complex(int px, int py, const MandelbrotParams *params, double *cr, double *ci);
 
 /**
  * @brief Obtém o tempo atual com precisão de nanossegundos via CLOCK_MONOTONIC.
@@ -83,7 +144,7 @@ double get_wtime(void);
  *   Z0 = 0
  *   Z{n+1} = Z{n}² + c
  *
- * até que |Z|² > 4 (escape) ou até atingir MAX_ITER iterações.
+ * até que |Z|² > 4 (escape) ou até atingir params->max_iter iterações.
  *
  * Dedução da recorrência em termos de partes real/imaginária
  * (Z{n}² == (zr + ziI)², c == (cr + ciI)):
@@ -95,10 +156,16 @@ double get_wtime(void);
  *     zr{n+1} = zr² - zi² + cr
  *     zi{n+1} = 2(zr·zi) + ci
  *
- * O resultado (número de iterações até o escape, ou MAX_ITER se o ponto
- * nunca escapar) é armazenado em img->data, percorrido em ordem row-major
- * (linha por linha, py externo e px interno).
+ * O resultado (número de iterações até o escape, ou params->max_iter se o
+ * ponto nunca escapar) é armazenado em img->data, percorrido em ordem
+ * row-major (linha por linha, py externo e px interno).
+ *
+ * @param params  Resolução, domínio e teto de iterações desta execução.
+ *                Função não faz nada se params for NULL.
+ * @param balance Se não-NULL, a versão OpenMP preenche min/médio/máximo
+ *                de tempo por thread e o fator t_max/t_mean. A serial ignora.
  */
-void compute_mandelbrot(ImageBuffer *img);
+void compute_mandelbrot(ImageBuffer *img, const MandelbrotParams *params,
+                        LoadBalanceStats *balance);
 
 #endif /* MANDELBROT_H */

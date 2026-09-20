@@ -21,14 +21,14 @@ Pontos localizados no interior do conjunto convergem lentamente, demandando inva
 ```text
 .
 ├── common/                    # Código compartilhado entre as versões serial e OpenMP
-│   ├── common.c               # Alocação do buffer, mapeamento pixel->plano complexo, temporização
+│   ├── common.c               # Buffer, mapeamento, temporização e parser da CLI
 │   ├── io_utils.c             # Exportação PGM/PPM e matriz binária int32 (row-major)
 │   ├── io_utils.h             # Interface do módulo de Entrada/Saída
-│   └── mandelbrot.h           # Constantes globais, struct ImageBuffer e protótipos comuns
+│   └── mandelbrot.h           # Constantes globais, ImageBuffer, MandelbrotParams, LoadBalanceStats
 ├── openmp/                    # Versão paralela do cálculo do Mandelbrot
-│   ├── main.c                 # Ponto de entrada da versão OpenMP: orquestra I/O e medição de tempo
+│   ├── main.c                 # Ponto de entrada OpenMP: CLI, I/O, tempo de parede e fator de carga
 │   ├── Makefile               # Regras de build específicas da versão OpenMP (gcc -O3 -fopenmp)
-│   └── mandelbrot_compute.c   # Rotina de cálculo paralelizada (#pragma omp, schedule(runtime))
+│   └── mandelbrot_compute.c   # Cálculo paralelizado (schedule(runtime)) e tempo por thread
 ├── serial/                    # Versão sequencial do cálculo do Mandelbrot
 │   ├── main.c                 # Ponto de entrada da versão serial
 │   ├── Makefile               # Regras de build específicas da versão serial (gcc -O3)
@@ -50,11 +50,12 @@ Residem em `common/` os módulos cujo comportamento independe do modelo de paral
 
 | Arquivo | Componentes | Responsabilidade |
 | :--- | :--- | :--- |
-| `mandelbrot.h` | `WIDTH`, `HEIGHT`, `MAX_ITER`, `RE_MIN`/`RE_MAX`, `IM_MIN`/`IM_MAX`, `struct ImageBuffer`, protótipos | Define os parâmetros oficiais do benchmark e o contrato de interface compartilhado por todas as versões |
-| `common.c` | `create_image_buffer()`, `free_image_buffer()` | Alocação e liberação do buffer contíguo de `int32_t` e da estrutura controladora |
-| `common.c` | `pixel_to_complex()` | Mapeamento linear das coordenadas de tela `(px, py)` para o plano complexo `(cr, ci)` |
-| `common.c` | `get_wtime()` | Temporização monotônica via `CLOCK_MONOTONIC`, utilizada pela versão serial |
-| `io_utils.c` / `io_utils.h` | `export_binary()`, `export_pgm()`, `export_ppm()`, `load_binary()` | Serialização da matriz de contagens e geração dos mapas visuais |
+| `mandelbrot.h` | Macros do caso base e do seahorse, `ImageBuffer`, `MandelbrotParams`, `LoadBalanceStats`, protótipos | Contrato compartilhado: defaults oficiais, parâmetros por execução e estatísticas de carga |
+| `common.c` | `create_image_buffer()`, `free_image_buffer()` | Alocação e liberação do buffer contíguo de `int32_t` |
+| `common.c` | `mandelbrot_params_init_default()`, `mandelbrot_params_parse_args()` | Defaults do caso base e CLI (`--width`, `--preset`, domínio, `MAX_ITER`) |
+| `common.c` | `pixel_to_complex()` | Mapeamento linear `(px, py)` → `(cr, ci)` a partir de `MandelbrotParams` |
+| `common.c` | `get_wtime()` | Temporização monotônica via `CLOCK_MONOTONIC` (serial e I/O) |
+| `io_utils.c` / `io_utils.h` | `export_binary()`, `export_pgm()`, `export_ppm()`, `load_binary()` | Serialização da matriz; PGM/PPM usam `max_iter` da execução |
 
 A centralização desses módulos garante que as constantes de domínio, o mapeamento de coordenadas e o formato de serialização sejam rigorosamente idênticos entre as versões, condição necessária para que a comparação de corretude descrita adiante seja válida, uma vez que elimina divergências originadas fora da rotina de cálculo.
 
@@ -66,7 +67,8 @@ Cada diretório de implementação contém dois arquivos próprios, cujas difere
 
 | Aspecto | `serial/` | `openmp/` |
 | :--- | :--- | :--- |
-| Diretiva de paralelização | Ausente | `#pragma omp parallel for schedule(runtime)` sobre o laço `py` |
+| Diretiva de paralelização | Ausente | `#pragma omp parallel` + `#pragma omp for schedule(runtime) nowait` sobre o laço `py` |
+| Instrumentação de carga | Ignora `LoadBalanceStats` (`NULL`) | Tempo de trabalho por thread; fator `t_max / t_mean` |
 | Inclusão de cabeçalhos | Apenas `mandelbrot.h` | `mandelbrot.h` e, condicionalmente, `<omp.h>` sob `#ifdef _OPENMP` |
 | Corpo do laço, aritmética e ordem *row-major* | Idênticos entre as duas versões | Idênticos entre as duas versões |
 
@@ -74,10 +76,12 @@ Cada diretório de implementação contém dois arquivos próprios, cujas difere
 
 | Aspecto | `serial/` | `openmp/` |
 | :--- | :--- | :--- |
+| Parâmetros | CLI compartilhada; sem flags usa o caso base (4096×4096, vista completa) | Idêntica |
 | Função de temporização | `get_wtime()` (`CLOCK_MONOTONIC`) | `omp_get_wtime()`, com fallback para `get_wtime()` sob `#ifndef _OPENMP` |
 | Diagnóstico de ambiente | Não aplicável | Reporta `omp_get_max_threads()` e emite alerta caso `_OPENMP` não esteja definida |
+| Fator de balanceamento | Não imprime | Imprime min/médio/máximo por thread e a linha `BALANCE ...` |
 | Prefixo dos artefatos de saída | `mandelbrot_serial.*` | `mandelbrot_omp.*` |
-| Sequência de operações | Alocação -> medição isolada do cálculo -> exportação -> liberação | Idêntica |
+| Sequência de operações | Parse da CLI → alocação → cálculo cronometrado → exportação → liberação | Idêntica |
 
 **`Makefile` — regras de construção**
 
@@ -99,13 +103,20 @@ Essa delimitação assegura que o algoritmo de escape-time seja expresso uma ún
 A paralelização é aplicada sobre o **laço externo** (`py`), de modo que cada thread processa linhas inteiras da imagem. O laço interno (`px`) permanece serial dentro de cada thread, preservando a localidade espacial de acesso à memória: como o buffer é contíguo em ordem *row-major*, o percurso de uma linha completa maximiza o aproveitamento das linhas de cache carregadas.
 
 ```c
-#pragma omp parallel for schedule(runtime)
-for (int py = 0; py < img->height; py++) {
-    for (int px = 0; px < img->width; px++) {
-        /* ... cálculo escape-time do pixel (px, py) ... */
+#pragma omp parallel
+{
+    /* t0 = omp_get_wtime(); */
+    #pragma omp for schedule(runtime) nowait
+    for (int py = 0; py < img->height; py++) {
+        for (int px = 0; px < img->width; px++) {
+            /* ... cálculo escape-time do pixel (px, py) ... */
+        }
     }
+    /* t1 = omp_get_wtime();  grava tempo desta thread */
 }
 ```
+
+O `nowait` no `for` evita que o tempo por thread inclua a espera na barreira: cada thread registra `t1 - t0` ao terminar as próprias linhas. Sem isso, todos os tempos coincidiriam com o da thread mais lenta e o fator de carga ficaria artificialmente 1.
 
 ### Gerenciamento de Escopo das Variáveis
 
@@ -117,15 +128,24 @@ A escrita em `img->data[py * width + px]` dispensa qualquer primitiva de sincron
 
 ### Justificativa do `schedule(runtime)`
 
-A adoção de `schedule(runtime)`, em detrimento da fixação de uma política específica em tempo de compilação, atende diretamente ao objetivo experimental da Etapa 1. O desbalanceamento intrínseco de carga, descrito na seção introdutória, implica que linhas atravessando regiões de fronteira do fractal demandam substancialmente mais tempo que linhas situadas em regiões de escape rápido.
+A adoção de `schedule(runtime)`, em detrimento da fixação de uma política específica em tempo de compilação, atende diretamente ao objetivo experimental da Etapa 1. O desbalanceamento intrínseco de carga implica que linhas atravessando regiões de fronteira do fractal demandam substancialmente mais tempo que linhas situadas em regiões de escape rápido.
 
 Com `schedule(runtime)`, a totalidade dessas configurações é avaliável a partir de um **único binário**, mediante variação exclusiva da variável de ambiente `OMP_SCHEDULE`, garantindo que as medições comparativas não sejam contaminadas por diferenças de compilação entre execuções.
+
+### Fator de Balanceamento de Carga
+
+A versão OpenMP mede o tempo de **trabalho** de cada thread e resume:
+
+- `t_min`, `t_mean`, `t_max`
+- **fator** = `t_max / t_mean` (1,0 = carga uniforme; valores maiores = desbalanceamento)
+
+A linha parseável `BALANCE nthreads=... factor=...` destina-se ao registro no relatório da Etapa 1. A serial não calcula essa métrica.
 
 ---
 
 ## Especificações Técnicas e Parâmetros
 
-A tabela a seguir consolida os parâmetros adotados para o caso base de referência:
+A tabela a seguir consolida os parâmetros do caso base (vista completa). Sem argumentos na CLI, estes são os valores usados:
 
 | Parâmetro | Configuração Base | Descrição Técnica |
 | :--- | :--- | :--- |
@@ -139,6 +159,8 @@ A tabela a seguir consolida os parâmetros adotados para o caso base de referên
 | **Temporização (serial)** | `CLOCK_MONOTONIC` | Resolução em nanossegundos isolando a fase de cálculo das rotinas de I/O |
 | **Temporização (OpenMP)** | `omp_get_wtime()` | Relógio de parede da especificação OpenMP, portátil entre implementações e monotônico por definição |
 | **Formatos de Saída** | Binário (`.bin`) / PGM / PPM | Matriz bruta de contagens e mapas visuais em escala de cinza e RGB |
+
+O caso de desbalanceamento acentuado é o preset `--preset seahorse`: centro `(−0,743643887, 0,131825904)`, largura real `3,0×10⁻³` (eixo imaginário com a mesma extensão) e `MAX_ITER = 5000`. A resolução permanece 4096×4096, salvo `--width` / `--height`.
 
 ---
 
@@ -220,6 +242,26 @@ gcc -std=c99 -O3 -Wall -Wextra -fopenmp -Icommon \
 
 ### Instruções de Execução
 
+Resolução, domínio e `MAX_ITER` são definidos em `MandelbrotParams` e podem ser alterados na linha de comando. Sem flags, o comportamento é o caso base (`make validate` permanece válido).
+
+| Flag | Padrão | Função |
+| :--- | :--- | :--- |
+| `--width` / `--height` | 4096 | Resolução em pixels |
+| `--max-iter` | 1000 | Teto de iterações |
+| `--re-min` / `--re-max` | −2,0 / 1,0 | Intervalo do eixo real |
+| `--im-min` / `--im-max` | −1,5 / 1,5 | Intervalo do eixo imaginário |
+| `--preset full` | (implícito) | Restaura domínio e `MAX_ITER` da vista completa |
+| `--preset seahorse` | — | Zoom no vale dos cavalos-marinhos e `MAX_ITER = 5000` |
+| `-h` / `--help` | — | Ajuda e encerra |
+
+Flags posteriores sobrescrevem as anteriores (`--preset seahorse --width 256` gera o zoom em 256×256).
+
+```bash
+./serial/mandelbrot_seq --help
+./serial/mandelbrot_seq --width 256 --height 256 --max-iter 200
+./openmp/mandelbrot_omp --preset seahorse
+```
+
 #### Versão Serial
 
 A execução do binário pode ser realizada diretamente via terminal:
@@ -275,6 +317,9 @@ OMP_SCHEDULE="guided,4" OMP_NUM_THREADS=8 ./mandelbrot_omp
 
 # Execução sequencial de controle (linha de base para cálculo de Speedup)
 OMP_NUM_THREADS=1 ./mandelbrot_omp
+
+# Caso seahorse (desbalanceamento acentuado) com 8 threads e schedule dinâmico
+OMP_NUM_THREADS=8 OMP_SCHEDULE="dynamic,16" ./mandelbrot_omp --preset seahorse
 ```
 
 O `Makefile` da versão paralela disponibiliza ainda alvos de conveniência que encapsulam as três políticas de interesse principal:
@@ -334,8 +379,8 @@ python3 validate.py serial/mandelbrot_serial.bin openmp/mandelbrot_omp.bin --wid
 O cronograma do projeto está organizado em três fases de evolução arquitetural:
 
 - **Etapa 1: Versão Serial e Paralelismo em Memória Compartilhada (OpenMP)**
-  - Conclusão da rotina de cálculo serial de referência.
-  - Implementação de laços paralelos OpenMP, investigando políticas de escalonamento estático (`schedule(static)`) e dinâmico (`schedule(dynamic)` ou `guided`) para compensar a distribuição irregular de carga.
+  - Rotina serial de referência, OpenMP com `schedule(runtime)`, CLI, preset seahorse e fator de balanceamento de carga.
+  - Experimentos e relatório técnico da etapa (tempos, Speedup, Eficiência, carga) ainda a registrar.
 - **Etapa 2: Paralelismo em Memória Distribuída (MPI)**
   - Decomposição de domínio bidimensional e balanceamento de carga entre múltiplos nós de computação independentes.
   - Avaliação de estratégias de divisão estática por faixas de linhas contra arquiteturas dinâmicas mestre-trabalhador (*master-worker*).
