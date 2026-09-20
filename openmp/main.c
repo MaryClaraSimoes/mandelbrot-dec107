@@ -52,23 +52,41 @@ int main(int argc, char **argv) {
     /* 2. Medicao isolada do tempo de calculo */
     printf("Iniciando computacao...\n");
 
+    LoadBalanceStats balance;
+    balance.nthreads = 0;
+    balance.t_min = 0.0;
+    balance.t_max = 0.0;
+    balance.t_mean = 0.0;
+    balance.factor = 0.0;
+
     #ifdef _OPENMP
         double start_time = omp_get_wtime();
 
-        compute_mandelbrot(img, &params);
+        compute_mandelbrot(img, &params, &balance);
 
         double end_time = omp_get_wtime();
         double elapsed_time = end_time - start_time;
     #else 
         double start_time = get_wtime();
 
-        compute_mandelbrot(img, &params);
+        compute_mandelbrot(img, &params, &balance);
 
         double end_time = get_wtime();
         double elapsed_time = end_time - start_time;
     #endif
     /* 3. Exibicao do tempo decorrido com 4 casas decimais */
     printf("Tempo de calculo: %.4f segundos\n", elapsed_time);
+
+    if (balance.nthreads > 0) {
+        printf("Balanceamento de carga:\n");
+        printf("  - Threads: %d\n", balance.nthreads);
+        printf("  - Tempo min / medio / max: %.6f / %.6f / %.6f s\n",
+               balance.t_min, balance.t_mean, balance.t_max);
+        printf("  - Fator (t_max / t_medio): %.4f\n", balance.factor);
+        printf("BALANCE nthreads=%d t_min=%.6f t_mean=%.6f t_max=%.6f factor=%.4f\n",
+               balance.nthreads, balance.t_min, balance.t_mean, balance.t_max,
+               balance.factor);
+    }
 
     /* 4. Exportação dos dados (fora da medição de tempo) */
     printf("\nExportando resultados...\n");

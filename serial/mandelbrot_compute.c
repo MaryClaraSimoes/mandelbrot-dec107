@@ -7,10 +7,12 @@
  * em ordem row-major, sem qualquer paralelismo. Esta é a versão usada
  * para gerar a saída binária canônica de validação de corretude.
  */
-void compute_mandelbrot(ImageBuffer *img, const MandelbrotParams *params) {
+void compute_mandelbrot(ImageBuffer *img, const MandelbrotParams *params,
+                        LoadBalanceStats *balance) {
     if (img == NULL || img->data == NULL || params == NULL) {
         return;
     }
+    (void)balance;
 
     for (int py = 0; py < img->height; py++) {
         for (int px = 0; px < img->width; px++) {

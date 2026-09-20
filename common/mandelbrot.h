@@ -55,6 +55,21 @@ typedef struct {
     double im_max;
 } MandelbrotParams;
 
+/**
+ * @brief Estatísticas de carga por thread (versão OpenMP).
+ *
+ * Tempos medidos no trabalho de cada thread, sem a espera na barreira
+ * do laço. O fator é t_max / t_mean (1.0 = carga perfeitamente equilibrada).
+ * A versão serial ignora este argumento (passe NULL).
+ */
+typedef struct {
+    int nthreads;
+    double t_min;
+    double t_max;
+    double t_mean;
+    double factor;
+} LoadBalanceStats;
+
 /* ========================================================================== */
 /* Protótipos das Funções do Módulo                                           */
 /* ========================================================================== */
@@ -145,9 +160,12 @@ double get_wtime(void);
  * ponto nunca escapar) é armazenado em img->data, percorrido em ordem
  * row-major (linha por linha, py externo e px interno).
  *
- * @param params Resolução, domínio e teto de iterações desta execução.
- *               Função não faz nada se params for NULL.
+ * @param params  Resolução, domínio e teto de iterações desta execução.
+ *                Função não faz nada se params for NULL.
+ * @param balance Se não-NULL, a versão OpenMP preenche min/médio/máximo
+ *                de tempo por thread e o fator t_max/t_mean. A serial ignora.
  */
-void compute_mandelbrot(ImageBuffer *img, const MandelbrotParams *params);
+void compute_mandelbrot(ImageBuffer *img, const MandelbrotParams *params,
+                        LoadBalanceStats *balance);
 
 #endif /* MANDELBROT_H */

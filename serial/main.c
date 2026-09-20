@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     printf("Iniciando computacao...\n");
     double start_time = get_wtime();
 
-    compute_mandelbrot(img, &params);
+    compute_mandelbrot(img, &params, NULL);
 
     double end_time = get_wtime();
     double elapsed_time = end_time - start_time;
