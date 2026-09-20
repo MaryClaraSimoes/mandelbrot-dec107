@@ -1,0 +1,225 @@
+=== RUN seahorse sched=static chunk=1 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4271 segundos
+BALANCE nthreads=8 t_min=0.351734 t_mean=0.373788 t_max=0.426600 factor=1.1413
+
+=== RUN seahorse sched=static chunk=1 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4252 segundos
+BALANCE nthreads=8 t_min=0.350480 t_mean=0.369827 t_max=0.424611 factor=1.1481
+
+=== RUN seahorse sched=static chunk=1 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4251 segundos
+BALANCE nthreads=8 t_min=0.348308 t_mean=0.368175 t_max=0.424622 factor=1.1533
+
+=== RUN seahorse sched=static chunk=8 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4231 segundos
+BALANCE nthreads=8 t_min=0.346665 t_mean=0.366865 t_max=0.422812 factor=1.1525
+
+=== RUN seahorse sched=static chunk=8 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4217 segundos
+BALANCE nthreads=8 t_min=0.346076 t_mean=0.366307 t_max=0.421182 factor=1.1498
+
+=== RUN seahorse sched=static chunk=8 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4252 segundos
+BALANCE nthreads=8 t_min=0.348430 t_mean=0.370960 t_max=0.424832 factor=1.1452
+
+=== RUN seahorse sched=static chunk=16 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4308 segundos
+BALANCE nthreads=8 t_min=0.349599 t_mean=0.371050 t_max=0.430184 factor=1.1594
+
+=== RUN seahorse sched=static chunk=16 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4241 segundos
+BALANCE nthreads=8 t_min=0.345238 t_mean=0.368654 t_max=0.423681 factor=1.1493
+
+=== RUN seahorse sched=static chunk=16 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4247 segundos
+BALANCE nthreads=8 t_min=0.343355 t_mean=0.367289 t_max=0.424253 factor=1.1551
+
+=== RUN seahorse sched=static chunk=32 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4264 segundos
+BALANCE nthreads=8 t_min=0.345950 t_mean=0.368604 t_max=0.425999 factor=1.1557
+
+=== RUN seahorse sched=static chunk=32 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4344 segundos
+BALANCE nthreads=8 t_min=0.344782 t_mean=0.370569 t_max=0.433902 factor=1.1709
+
+=== RUN seahorse sched=static chunk=32 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4264 segundos
+BALANCE nthreads=8 t_min=0.338260 t_mean=0.367019 t_max=0.426075 factor=1.1609
+
+=== RUN seahorse sched=static chunk=64 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4328 segundos
+BALANCE nthreads=8 t_min=0.335761 t_mean=0.368373 t_max=0.432150 factor=1.1731
+
+=== RUN seahorse sched=static chunk=64 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4111 segundos
+BALANCE nthreads=8 t_min=0.335358 t_mean=0.367001 t_max=0.410587 factor=1.1188
+
+=== RUN seahorse sched=static chunk=64 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4089 segundos
+BALANCE nthreads=8 t_min=0.335127 t_mean=0.366250 t_max=0.408497 factor=1.1153
+
+=== RUN seahorse sched=dynamic chunk=1 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3736 segundos
+BALANCE nthreads=8 t_min=0.371705 t_mean=0.372311 t_max=0.372981 factor=1.0018
+
+=== RUN seahorse sched=dynamic chunk=1 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3710 segundos
+BALANCE nthreads=8 t_min=0.369336 t_mean=0.369871 t_max=0.370564 factor=1.0019
+
+=== RUN seahorse sched=dynamic chunk=1 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3738 segundos
+BALANCE nthreads=8 t_min=0.372254 t_mean=0.372855 t_max=0.373291 factor=1.0012
+
+=== RUN seahorse sched=dynamic chunk=8 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3755 segundos
+BALANCE nthreads=8 t_min=0.367116 t_mean=0.370143 t_max=0.375017 factor=1.0132
+
+=== RUN seahorse sched=dynamic chunk=8 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3744 segundos
+BALANCE nthreads=8 t_min=0.365512 t_mean=0.368852 t_max=0.373865 factor=1.0136
+
+=== RUN seahorse sched=dynamic chunk=8 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3750 segundos
+BALANCE nthreads=8 t_min=0.365426 t_mean=0.369557 t_max=0.374558 factor=1.0135
+
+=== RUN seahorse sched=dynamic chunk=16 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3792 segundos
+BALANCE nthreads=8 t_min=0.362184 t_mean=0.369545 t_max=0.378723 factor=1.0248
+
+=== RUN seahorse sched=dynamic chunk=16 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3783 segundos
+BALANCE nthreads=8 t_min=0.360562 t_mean=0.368416 t_max=0.377706 factor=1.0252
+
+=== RUN seahorse sched=dynamic chunk=16 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3789 segundos
+BALANCE nthreads=8 t_min=0.360268 t_mean=0.368564 t_max=0.378480 factor=1.0269
+
+=== RUN seahorse sched=dynamic chunk=32 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3854 segundos
+BALANCE nthreads=8 t_min=0.357690 t_mean=0.369061 t_max=0.385024 factor=1.0433
+
+=== RUN seahorse sched=dynamic chunk=32 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3824 segundos
+BALANCE nthreads=8 t_min=0.351326 t_mean=0.368484 t_max=0.381907 factor=1.0364
+
+=== RUN seahorse sched=dynamic chunk=32 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3820 segundos
+BALANCE nthreads=8 t_min=0.353536 t_mean=0.368850 t_max=0.381406 factor=1.0340
+
+=== RUN seahorse sched=dynamic chunk=64 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4066 segundos
+BALANCE nthreads=8 t_min=0.339718 t_mean=0.369125 t_max=0.406340 factor=1.1008
+
+=== RUN seahorse sched=dynamic chunk=64 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4069 segundos
+BALANCE nthreads=8 t_min=0.346656 t_mean=0.368851 t_max=0.406362 factor=1.1017
+
+=== RUN seahorse sched=dynamic chunk=64 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4047 segundos
+BALANCE nthreads=8 t_min=0.344756 t_mean=0.366579 t_max=0.404382 factor=1.1031
+
+=== RUN seahorse sched=guided chunk=1 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4023 segundos
+BALANCE nthreads=8 t_min=0.369945 t_mean=0.374159 t_max=0.401907 factor=1.0742
+
+=== RUN seahorse sched=guided chunk=1 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3910 segundos
+BALANCE nthreads=8 t_min=0.365494 t_mean=0.369248 t_max=0.390682 factor=1.0580
+
+=== RUN seahorse sched=guided chunk=1 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4633 segundos
+BALANCE nthreads=8 t_min=0.353279 t_mean=0.367523 t_max=0.463057 factor=1.2599
+
+=== RUN seahorse sched=guided chunk=8 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3950 segundos
+BALANCE nthreads=8 t_min=0.367504 t_mean=0.373958 t_max=0.394501 factor=1.0549
+
+=== RUN seahorse sched=guided chunk=8 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4122 segundos
+BALANCE nthreads=8 t_min=0.355359 t_mean=0.370835 t_max=0.411902 factor=1.1107
+
+=== RUN seahorse sched=guided chunk=8 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3955 segundos
+BALANCE nthreads=8 t_min=0.365898 t_mean=0.374604 t_max=0.395057 factor=1.0546
+
+=== RUN seahorse sched=guided chunk=16 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3956 segundos
+BALANCE nthreads=8 t_min=0.358445 t_mean=0.374656 t_max=0.395034 factor=1.0544
+
+=== RUN seahorse sched=guided chunk=16 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3946 segundos
+BALANCE nthreads=8 t_min=0.364232 t_mean=0.371574 t_max=0.394134 factor=1.0607
+
+=== RUN seahorse sched=guided chunk=16 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4637 segundos
+BALANCE nthreads=8 t_min=0.348767 t_mean=0.368797 t_max=0.463311 factor=1.2563
+
+=== RUN seahorse sched=guided chunk=32 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3955 segundos
+BALANCE nthreads=8 t_min=0.351846 t_mean=0.370332 t_max=0.395111 factor=1.0669
+
+=== RUN seahorse sched=guided chunk=32 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.3947 segundos
+BALANCE nthreads=8 t_min=0.350338 t_mean=0.368330 t_max=0.394249 factor=1.0704
+
+=== RUN seahorse sched=guided chunk=32 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4629 segundos
+BALANCE nthreads=8 t_min=0.341991 t_mean=0.367103 t_max=0.462339 factor=1.2594
+
+=== RUN seahorse sched=guided chunk=64 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4076 segundos
+BALANCE nthreads=8 t_min=0.352138 t_mean=0.376145 t_max=0.407094 factor=1.0823
+
+=== RUN seahorse sched=guided chunk=64 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4574 segundos
+BALANCE nthreads=8 t_min=0.324890 t_mean=0.366242 t_max=0.456887 factor=1.2475
+
+=== RUN seahorse sched=guided chunk=64 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 0.4244 segundos
+BALANCE nthreads=8 t_min=0.334625 t_mean=0.369703 t_max=0.423963 factor=1.1468
+

@@ -1,0 +1,75 @@
+=== RUN nthreads=1 rep=1 ===
+  - Threads OpenMP disponiveis: 1
+Tempo de calculo: 5.8827 segundos
+BALANCE nthreads=1 t_min=5.882724 t_mean=5.882724 t_max=5.882724 factor=1.0000
+
+=== RUN nthreads=1 rep=2 ===
+  - Threads OpenMP disponiveis: 1
+Tempo de calculo: 5.8595 segundos
+BALANCE nthreads=1 t_min=5.859488 t_mean=5.859488 t_max=5.859488 factor=1.0000
+
+=== RUN nthreads=1 rep=3 ===
+  - Threads OpenMP disponiveis: 1
+Tempo de calculo: 5.8515 segundos
+BALANCE nthreads=1 t_min=5.851471 t_mean=5.851471 t_max=5.851471 factor=1.0000
+
+=== RUN nthreads=2 rep=1 ===
+  - Threads OpenMP disponiveis: 2
+Tempo de calculo: 2.9605 segundos
+BALANCE nthreads=2 t_min=2.933484 t_mean=2.946920 t_max=2.960357 factor=1.0046
+
+=== RUN nthreads=2 rep=2 ===
+  - Threads OpenMP disponiveis: 2
+Tempo de calculo: 2.9348 segundos
+BALANCE nthreads=2 t_min=2.929864 t_mean=2.932219 t_max=2.934574 factor=1.0008
+
+=== RUN nthreads=2 rep=3 ===
+  - Threads OpenMP disponiveis: 2
+Tempo de calculo: 2.9470 segundos
+BALANCE nthreads=2 t_min=2.922292 t_mean=2.934517 t_max=2.946742 factor=1.0042
+
+=== RUN nthreads=4 rep=1 ===
+  - Threads OpenMP disponiveis: 4
+Tempo de calculo: 2.8707 segundos
+BALANCE nthreads=4 t_min=0.100321 t_mean=1.480345 t_max=2.870420 factor=1.9390
+
+=== RUN nthreads=4 rep=2 ===
+  - Threads OpenMP disponiveis: 4
+Tempo de calculo: 2.8729 segundos
+BALANCE nthreads=4 t_min=0.101194 t_mean=1.483384 t_max=2.872263 factor=1.9363
+
+=== RUN nthreads=4 rep=3 ===
+  - Threads OpenMP disponiveis: 4
+Tempo de calculo: 2.8667 segundos
+BALANCE nthreads=4 t_min=0.095410 t_mean=1.474736 t_max=2.866337 factor=1.9436
+
+=== RUN nthreads=8 rep=1 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 2.0305 segundos
+BALANCE nthreads=8 t_min=0.021424 t_mean=0.769831 t_max=2.030086 factor=2.6371
+
+=== RUN nthreads=8 rep=2 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 2.0183 segundos
+BALANCE nthreads=8 t_min=0.010741 t_mean=0.761365 t_max=2.017865 factor=2.6503
+
+=== RUN nthreads=8 rep=3 ===
+  - Threads OpenMP disponiveis: 8
+Tempo de calculo: 2.0361 segundos
+BALANCE nthreads=8 t_min=0.010595 t_mean=0.765593 t_max=2.035662 factor=2.6589
+
+=== RUN nthreads=16 rep=1 ===
+  - Threads OpenMP disponiveis: 16
+Tempo de calculo: 1.1880 segundos
+BALANCE nthreads=16 t_min=0.011770 t_mean=0.407029 t_max=1.187371 factor=2.9172
+
+=== RUN nthreads=16 rep=2 ===
+  - Threads OpenMP disponiveis: 16
+Tempo de calculo: 1.1946 segundos
+BALANCE nthreads=16 t_min=0.009115 t_mean=0.402413 t_max=1.194022 factor=2.9672
+
+=== RUN nthreads=16 rep=3 ===
+  - Threads OpenMP disponiveis: 16
+Tempo de calculo: 1.2388 segundos
+BALANCE nthreads=16 t_min=0.009840 t_mean=0.401765 t_max=1.238012 factor=3.0814
+
