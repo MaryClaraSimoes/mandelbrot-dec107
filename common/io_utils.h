@@ -11,27 +11,29 @@
  * @brief Exporta a matriz de iterações como imagem PGM (Portable Graymap).
  *
  * Gera um arquivo no formato Netpbm P5 (binário, escala de cinza) com
- * intensidades linearmente mapeadas do intervalo [0, MAX_ITER] para [0, 255].
- * Pixels com valor MAX_ITER (interior do conjunto) são mapeados para preto (0).
+ * intensidades linearmente mapeadas do intervalo [0, max_iter] para [0, 255].
+ * Pixels com valor max_iter (interior do conjunto) são mapeados para preto (0).
  *
  * @param img      Ponteiro para o ImageBuffer com os dados de iteração.
  * @param filename Caminho do arquivo de saída (e.g., "mandelbrot.pgm").
+ * @param max_iter Teto de iterações usado no cálculo (interior = preto).
  * @return 0 em caso de sucesso, -1 em caso de erro.
  */
-int export_pgm(const ImageBuffer *img, const char *filename);
+int export_pgm(const ImageBuffer *img, const char *filename, int max_iter);
 
 /**
  * @brief Exporta a matriz de iterações como imagem PPM (Portable Pixmap).
  *
  * Gera um arquivo no formato Netpbm P6 (binário, RGB) utilizando uma paleta
  * de cores baseada em mapeamento cíclico HSV para realçar as faixas de
- * iteração. Pixels com valor MAX_ITER são mapeados para preto (0, 0, 0).
+ * iteração. Pixels com valor max_iter são mapeados para preto (0, 0, 0).
  *
  * @param img      Ponteiro para o ImageBuffer com os dados de iteração.
  * @param filename Caminho do arquivo de saída (e.g., "mandelbrot.ppm").
+ * @param max_iter Teto de iterações usado no cálculo (interior = preto).
  * @return 0 em caso de sucesso, -1 em caso de erro.
  */
-int export_ppm(const ImageBuffer *img, const char *filename);
+int export_ppm(const ImageBuffer *img, const char *filename, int max_iter);
 
 /**
  * @brief Exporta a matriz de iterações em formato binário bruto.

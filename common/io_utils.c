@@ -44,8 +44,8 @@ static void hsv_to_rgb(double h, double s, double v,
 /* Exportação PGM (Escala de Cinza)                                           */
 /* ========================================================================== */
 
-int export_pgm(const ImageBuffer *img, const char *filename) {
-    if (img == NULL || img->data == NULL || filename == NULL) {
+int export_pgm(const ImageBuffer *img, const char *filename, int max_iter) {
+    if (img == NULL || img->data == NULL || filename == NULL || max_iter <= 0) {
         fprintf(stderr, "Erro: parametros invalidos para export_pgm.\n");
         return -1;
     }
@@ -69,15 +69,15 @@ int export_pgm(const ImageBuffer *img, const char *filename) {
     }
 
     /*
-     * Mapeamento linear: iterações [0, MAX_ITER) -> luminosidade [0, 255).
-     * Pixels no interior do conjunto (iter == MAX_ITER) recebem preto (0).
+     * Mapeamento linear: iterações [0, max_iter) -> luminosidade [0, 255).
+     * Pixels no interior do conjunto (iter == max_iter) recebem preto (0).
      */
     for (size_t i = 0; i < total_pixels; i++) {
         int32_t iter = img->data[i];
-        if (iter >= MAX_ITER) {
+        if (iter >= max_iter) {
             pixels[i] = 0;
         } else {
-            pixels[i] = (unsigned char)(255.0 * (double)iter / (double)MAX_ITER);
+            pixels[i] = (unsigned char)(255.0 * (double)iter / (double)max_iter);
         }
     }
 
@@ -99,8 +99,8 @@ int export_pgm(const ImageBuffer *img, const char *filename) {
 /* Exportação PPM (Colorido com Paleta HSV)                                   */
 /* ========================================================================== */
 
-int export_ppm(const ImageBuffer *img, const char *filename) {
-    if (img == NULL || img->data == NULL || filename == NULL) {
+int export_ppm(const ImageBuffer *img, const char *filename, int max_iter) {
+    if (img == NULL || img->data == NULL || filename == NULL || max_iter <= 0) {
         fprintf(stderr, "Erro: parametros invalidos para export_ppm.\n");
         return -1;
     }
@@ -129,13 +129,13 @@ int export_ppm(const ImageBuffer *img, const char *filename) {
      */
     for (size_t i = 0; i < total_pixels; i++) {
         int32_t iter = img->data[i];
-        if (iter >= MAX_ITER) {
+        if (iter >= max_iter) {
             /* Interior do conjunto: preto */
             pixels[i * 3 + 0] = 0;
             pixels[i * 3 + 1] = 0;
             pixels[i * 3 + 2] = 0;
         } else {
-            double t = (double)iter / (double)MAX_ITER;
+            double t = (double)iter / (double)max_iter;
             double hue = fmod(360.0 * t * 5.0, 360.0);  /* ciclos de matiz */
             double sat = 0.85;
             double val = 0.6 + 0.4 * t;                  /* brilho crescente */

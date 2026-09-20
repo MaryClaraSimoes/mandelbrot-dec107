@@ -7,8 +7,8 @@
  * em ordem row-major, sem qualquer paralelismo. Esta é a versão usada
  * para gerar a saída binária canônica de validação de corretude.
  */
-void compute_mandelbrot(ImageBuffer *img) {
-    if (img == NULL || img->data == NULL) {
+void compute_mandelbrot(ImageBuffer *img, const MandelbrotParams *params) {
+    if (img == NULL || img->data == NULL || params == NULL) {
         return;
     }
 
@@ -17,9 +17,9 @@ void compute_mandelbrot(ImageBuffer *img) {
             double zr = 0.0, zi = 0.0, cr = 0.0, ci = 0.0;
             int iter = 0;
 
-            pixel_to_complex(px, py, img->width, img->height, &cr, &ci);
+            pixel_to_complex(px, py, params, &cr, &ci);
 
-            while (iter < MAX_ITER && (zr*zr + zi*zi) <= 4.0) {
+            while (iter < params->max_iter && (zr*zr + zi*zi) <= 4.0) {
                 double next_zr = (zr*zr) - (zi*zi) + cr;
                 double next_zi = 2*(zr*zi) + ci;
                 zr = next_zr;
