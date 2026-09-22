@@ -387,3 +387,11 @@ O cronograma do projeto está organizado em três fases de evolução arquitetur
 - **Etapa 3: Paralelismo Massivo em GPU (CUDA)**
   - Implementação de *kernels* dedicados para execução massivamente paralela em arquiteturas many-core NVIDIA.
   - Otimização do padrão de coalescência na memória global, ajuste na volumetria de blocos/threads e minimização dos tempos de transferência de memória entre *host* e *device*.
+
+---
+
+## Nota de Transparência sobre o Uso de IA
+
+Declaramos que este projeto contou com o auxílio das ferramentas de IA Claude, Cursor e Antigravity exclusivamente para as tarefas de revisão gramatical e tradução de trechos do relatório (e documentos do projeto), auxílio na depuração (debugging) de blocos específicos de código e na correção de eventuais erros no código e no auxilio na geração de scripts base para automação de testes de desempenho. Como autores, atestamos que revisamos, testamos e validamos criticamente todo o conteúdo gerado, assumindo total e exclusiva responsabilidade pela correção lógica do código, precisão dos relatórios de desempenho e integridade acadêmica do material entregue.
+
+Breno Arouca Nascimento, Emyle Santana da Silva e Maria Clara Simões de Jesus – 21 de setembro de 2026
