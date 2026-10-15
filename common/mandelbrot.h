@@ -22,6 +22,10 @@
 #define SEAHORSE_RE_WIDTH     3.0e-3
 #define SEAHORSE_MAX_ITER     5000
 
+/* Estratégias de decomposição MPI (ignoradas nas versões serial/OpenMP). */
+#define MANDELBROT_STRATEGY_BLOCK  0
+#define MANDELBROT_STRATEGY_CYCLIC 1
+
 /* ========================================================================== */
 /* Estrutura de Armazenamento da Imagem                                       */
 /* ========================================================================== */
@@ -53,6 +57,7 @@ typedef struct {
     double re_max;
     double im_min;
     double im_max;
+    int strategy; /* MANDELBROT_STRATEGY_BLOCK ou MANDELBROT_STRATEGY_CYCLIC */
 } MandelbrotParams;
 
 /**
@@ -101,9 +106,10 @@ void mandelbrot_params_init_default(MandelbrotParams *params);
  * @brief Interpreta argumentos de linha de comando sobre params já inicializado.
  *
  * Flags reconhecidas: --width, --height, --max-iter, --re-min, --re-max,
- * --im-min, --im-max, --preset {full|seahorse}, --help / -h. Valores omitidos
- * preservam o conteúdo prévio de params (em geral, os defaults da seção 5.2).
- * Flags posteriores sobrescrevem as anteriores (ex.: --preset seahorse --width 256).
+ * --im-min, --im-max, --preset {full|seahorse}, --strategy {block|cyclic},
+ * --help / -h. Valores omitidos preservam o conteúdo prévio de params
+ * (em geral, os defaults da seção 5.2). Flags posteriores sobrescrevem as
+ * anteriores (ex.: --preset seahorse --width 256). --strategy afeta apenas MPI.
  *
  * @return  0 em sucesso; 1 se --help foi pedido; -1 em erro de sintaxe/validação.
  */
