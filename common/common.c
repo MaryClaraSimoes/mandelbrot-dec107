@@ -67,6 +67,7 @@ void mandelbrot_params_init_default(MandelbrotParams *params) {
     params->re_max = RE_MAX;
     params->im_min = IM_MIN;
     params->im_max = IM_MAX;
+    params->strategy = MANDELBROT_STRATEGY_BLOCK;
 }
 
 static void print_usage(FILE *fp, const char *prog) {
@@ -82,6 +83,8 @@ static void print_usage(FILE *fp, const char *prog) {
         "  --im-min Y      Minimo do eixo imaginario  (padrao: %.1f)\n"
         "  --im-max Y      Maximo do eixo imaginario  (padrao: %.1f)\n"
         "  --preset NAME   full (secao 5.2) ou seahorse (secao 5.3)\n"
+        "  --strategy NAME block (faixas contiguas) ou cyclic (linhas intercaladas)\n"
+        "                  Padrao: block. Usado apenas pela versao MPI.\n"
         "  -h, --help      Exibe esta ajuda e encerra\n"
         "\n"
         "Sem opcoes, usa o input oficial da secao 5.2.\n"
@@ -221,6 +224,20 @@ int mandelbrot_params_parse_args(int argc, char **argv, MandelbrotParams *params
                 apply_preset_seahorse(params);
             } else {
                 fprintf(stderr, "Erro: --preset desconhecido: '%s' (use full ou seahorse)\n", name);
+                return -1;
+            }
+        } else if (strcmp(arg, "--strategy") == 0) {
+            const char *name;
+            if (require_value(i, argc, arg) != 0) {
+                return -1;
+            }
+            name = argv[++i];
+            if (strcmp(name, "block") == 0) {
+                params->strategy = MANDELBROT_STRATEGY_BLOCK;
+            } else if (strcmp(name, "cyclic") == 0) {
+                params->strategy = MANDELBROT_STRATEGY_CYCLIC;
+            } else {
+                fprintf(stderr, "Erro: --strategy desconhecido: '%s' (use block ou cyclic)\n", name);
                 return -1;
             }
         } else {

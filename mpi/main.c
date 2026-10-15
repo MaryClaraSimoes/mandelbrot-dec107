@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+static const char *strategy_name(int strategy) {
+    return (strategy == MANDELBROT_STRATEGY_CYCLIC) ? "cyclic" : "block";
+}
+
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
 
@@ -40,6 +44,9 @@ int main(int argc, char **argv) {
     MPI_Bcast(&params.re_max, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&params.im_min, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&params.im_max, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&params.strategy, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    const char *strat = strategy_name(params.strategy);
 
     ImageBuffer *img = NULL;
     if (rank == 0) {
@@ -50,7 +57,8 @@ int main(int argc, char **argv) {
         }
 
         printf("====================================================\n");
-        printf(" Gerador do Conjunto de Mandelbrot (MPI - Blocos)   \n");
+        printf(" Gerador do Conjunto de Mandelbrot (MPI - %s)\n",
+               (params.strategy == MANDELBROT_STRATEGY_CYCLIC) ? "Ciclico" : "Blocos");
         printf("====================================================\n");
         printf("Configuracoes:\n");
         printf("  - Dimensoes: %d x %d pixels\n", params.width, params.height);
@@ -59,6 +67,7 @@ int main(int argc, char **argv) {
         printf("  - Dominio Imaginario (Im): [%.9f, %.9f]\n", params.im_min, params.im_max);
         printf("  - Maximo de Iteracoes: %d\n", params.max_iter);
         printf("  - Numero de Processos: %d\n", size);
+        printf("  - Estrategia: %s\n", strat);
 
         /* Teste de sanidade do mapeamento de coordenadas nos vértices */
         double cr_min, ci_min, cr_max, ci_max;
@@ -85,17 +94,24 @@ int main(int argc, char **argv) {
     double t_total = t_total_end - t_total_start;
 
     if (rank == 0) {
+        char bin_path[64];
+        char pgm_path[64];
+        char ppm_path[64];
+        snprintf(bin_path, sizeof(bin_path), "mandelbrot_mpi_%s.bin", strat);
+        snprintf(pgm_path, sizeof(pgm_path), "mandelbrot_mpi_%s.pgm", strat);
+        snprintf(ppm_path, sizeof(ppm_path), "mandelbrot_mpi_%s.ppm", strat);
+
         printf("\nExportando resultados...\n");
 
-        if (export_binary(img, "mandelbrot_mpi.bin") != 0) {
+        if (export_binary(img, bin_path) != 0) {
             fprintf(stderr, "Aviso: falha ao exportar matriz binaria.\n");
         }
 
-        if (export_pgm(img, "mandelbrot_mpi.pgm", params.max_iter) != 0) {
+        if (export_pgm(img, pgm_path, params.max_iter) != 0) {
             fprintf(stderr, "Aviso: falha ao exportar imagem PGM.\n");
         }
 
-        if (export_ppm(img, "mandelbrot_mpi.ppm", params.max_iter) != 0) {
+        if (export_ppm(img, ppm_path, params.max_iter) != 0) {
             fprintf(stderr, "Aviso: falha ao exportar imagem PPM.\n");
         }
 
@@ -103,6 +119,7 @@ int main(int argc, char **argv) {
 
         /* Saída de métricas em formato chave=valor parseável */
         printf("versao=mpi\n");
+        printf("estrategia=%s\n", strat);
         printf("resolucao=%dx%d\n", params.width, params.height);
         printf("max_iter=%d\n", params.max_iter);
         printf("processos=%d\n", size);

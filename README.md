@@ -29,6 +29,11 @@ Pontos localizados no interior do conjunto convergem lentamente, demandando inva
 │   ├── main.c                 # Ponto de entrada OpenMP: CLI, I/O, tempo de parede e fator de carga
 │   ├── Makefile               # Regras de build específicas da versão OpenMP (gcc -O3 -fopenmp)
 │   └── mandelbrot_compute.c   # Cálculo paralelizado (schedule(runtime)) e tempo por thread
+├── mpi/                       # Versão MPI (memória distribuída)
+│   ├── main.c                 # Ponto de entrada MPI (Bcast de parâmetros, I/O no rank 0)
+│   ├── Makefile               # Build com mpicc
+│   ├── mandelbrot_compute.h   # Interface compute_mandelbrot_mpi
+│   └── mandelbrot_compute.c   # Estratégias block (A) e cyclic (B) + MPI_Gatherv + λ
 ├── serial/                    # Versão sequencial do cálculo do Mandelbrot
 │   ├── main.c                 # Ponto de entrada da versão serial
 │   ├── Makefile               # Regras de build específicas da versão serial (gcc -O3)
@@ -36,7 +41,7 @@ Pontos localizados no interior do conjunto convergem lentamente, demandando inva
 ├── .gitignore                 # Arquivos/pastas ignorados pelo Git (binários, *.o, saídas)
 ├── Makefile                   # Makefile raiz: orquestra build das duas versões + testes + limpeza
 ├── README.md                  # Documentação técnica e arquitetural do projeto
-└── validate.py                # Comparação pixel a pixel entre matrizes binárias (serial vs OpenMP)
+└── validate.py                # Comparação pixel a pixel entre matrizes binárias (serial vs OpenMP/MPI)
 
 ```
 
@@ -221,6 +226,37 @@ gcc -std=c99 -O3 -Wall -Wextra -fopenmp -I../common
 
 > **Atenção:** a flag `-fopenmp` é obrigatória tanto na etapa de compilação quanto na de *linkagem*. Na sua ausência, o compilador **ignora silenciosamente** as diretivas `#pragma omp`, o binário compila e executa normalmente, porém de forma estritamente sequencial, sem emitir erro ou aviso. Por essa razão, `main.c` da versão paralela emite em tempo de execução um alerta explícito caso a macro `_OPENMP` não esteja definida.
 
+#### Compilação Individual — Versão MPI
+
+Requer `mpicc` e `mpirun` (OpenMPI ou MPICH) no `PATH`.
+
+```bash
+cd mpi
+make
+```
+
+Gera o executável `mpi/mandelbrot_mpi`. Flags aplicadas:
+
+```
+mpicc -std=c99 -O3 -Wall -Wextra -I../common
+```
+
+Execução (estratégia A = `block`, B = `cyclic`):
+
+```bash
+mpirun -np 4 ./mandelbrot_mpi --strategy block --preset seahorse
+mpirun -np 4 ./mandelbrot_mpi --strategy cyclic --preset seahorse
+```
+
+Saídas: `mandelbrot_mpi_block.bin` / `mandelbrot_mpi_cyclic.bin` (e `.pgm`/`.ppm`). Validação contra a serial:
+
+```bash
+python3 ../validate.py ../serial/mandelbrot_serial.bin mandelbrot_mpi_cyclic.bin \
+  --width 1024 --height 1024
+```
+
+O fator de balanceamento MPI (`f_lb`) usa a mesma definição do OpenMP: **λ = t_max / t_mean** (1.0 = ideal).
+
 #### Compilação Manual (sem `make`)
 
 Caso seja necessário compilar sem o auxílio do `make`, a partir do diretório raiz do projeto:
@@ -252,9 +288,10 @@ Resolução, domínio e `MAX_ITER` são definidos em `MandelbrotParams` e podem 
 | `--im-min` / `--im-max` | −1,5 / 1,5 | Intervalo do eixo imaginário |
 | `--preset full` | (implícito) | Restaura domínio e `MAX_ITER` da vista completa |
 | `--preset seahorse` | — | Zoom no vale dos cavalos-marinhos e `MAX_ITER = 5000` |
+| `--strategy block\|cyclic` | `block` | Decomposição MPI: faixas contíguas (A) ou linhas cíclicas (B) |
 | `-h` / `--help` | — | Ajuda e encerra |
 
-Flags posteriores sobrescrevem as anteriores (`--preset seahorse --width 256` gera o zoom em 256×256).
+Flags posteriores sobrescrevem as anteriores (`--preset seahorse --width 256` gera o zoom em 256×256). `--strategy` é usado apenas pela versão MPI.
 
 ```bash
 ./serial/mandelbrot_seq --help
@@ -382,8 +419,9 @@ O cronograma do projeto está organizado em três fases de evolução arquitetur
   - Rotina serial de referência, OpenMP com `schedule(runtime)`, CLI, preset seahorse e fator de balanceamento de carga.
   - Experimentos e relatório técnico da etapa (tempos, Speedup, Eficiência, carga) ainda a registrar.
 - **Etapa 2: Paralelismo em Memória Distribuída (MPI)**
-  - Decomposição de domínio bidimensional e balanceamento de carga entre múltiplos nós de computação independentes.
-  - Avaliação de estratégias de divisão estática por faixas de linhas contra arquiteturas dinâmicas mestre-trabalhador (*master-worker*).
+  - Estratégia A: faixas contíguas de linhas + `MPI_Gatherv`.
+  - Estratégia B: distribuição cíclica por linhas (`py = rank; py += size`) + `MPI_Gatherv` com remontagem no rank 0.
+  - Comparação de λ (e tempos) entre A e B no caso Seahorse; master-worker permanece como extensão futura.
 - **Etapa 3: Paralelismo Massivo em GPU (CUDA)**
   - Implementação de *kernels* dedicados para execução massivamente paralela em arquiteturas many-core NVIDIA.
   - Otimização do padrão de coalescência na memória global, ajuste na volumetria de blocos/threads e minimização dos tempos de transferência de memória entre *host* e *device*.
