@@ -322,11 +322,11 @@ def main() -> int:
     # ======================= Configuração dos cenários =======================
     if args.quick:
         strong = dict(w=512, h=512, it=200)
-        weak_map = {1: 512, 4: 1024, 16: 2048}
+        weak_map = {1: 512, 4: 1024, 9: 12288}
         seahorse = dict(w=512, h=512)
     else:
         strong = dict(w=4096, h=4096, it=1000)
-        weak_map = {1: 4096, 4: 8192, 16: 16384}
+        weak_map = {1: 4096, 4: 8192, 9: 12288}
         seahorse = dict(w=4096, h=4096)
 
     # ======================= Diretório de trabalho temporário =======================
