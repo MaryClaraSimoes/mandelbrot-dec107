@@ -322,7 +322,7 @@ def main() -> int:
     # ======================= Configuração dos cenários =======================
     if args.quick:
         strong = dict(w=512, h=512, it=200)
-        weak_map = {1: 512, 4: 1024, 9: 12288}
+        weak_map = {1: 512, 4: 1024, 9: 1536}
         seahorse = dict(w=512, h=512)
     else:
         strong = dict(w=4096, h=4096, it=1000)
@@ -449,11 +449,9 @@ def main() -> int:
 
     # ======================= Weak scaling =======================
     if args.only in ("weak", "all"):
-        print("[weak] 4096²@1, 8192²@4, 16384²@16 (ou versão quick)")
+        print("[weak] 4096²@1, 8192²@4, 12288²@9 (ou versão quick)")
         for strat in strategies:
-            for p in procs_list:
-                if p not in weak_map:
-                    continue
+            for p in sorted(weak_map.keys()):
                 s = weak_map[p]
                 for i in range(3):
                     print(f"  strat={strat:6s}  np={p:>2d}  res={s}x{s}")
