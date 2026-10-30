@@ -79,7 +79,9 @@ static int cyclic_row_count(int height, int size, int rank) {
 /**
  * @brief Agrega tempos locais e preenche LoadBalanceStats no rank 0.
  *
- * Fator λ = t_max / t_mean (mesmo critério da versão OpenMP).
+ * Fator λ = (t_max - t_min) / t_max.
+ * Valor 0 indica balanceamento perfeito; valores próximos de 1 indicam
+ * grande desbalanceamento.
  */
 static void reduce_balance_stats(int rank, int size, double t_local, LoadBalanceStats *balance) {
     double t_max = 0.0;
@@ -95,7 +97,7 @@ static void reduce_balance_stats(int rank, int size, double t_local, LoadBalance
         balance->t_min = t_min;
         balance->t_max = t_max;
         balance->t_mean = t_sum / (double)size;
-        balance->factor = (balance->t_mean > 0.0) ? (t_max / balance->t_mean) : 1.0;
+        balance->factor = (balance->t_max > 0.0) ? ((t_max - t_min) / t_max) : 0.0;
         printf("BALANCE_MPI ranks=%d t_min=%.6f t_max=%.6f t_mean=%.6f F_LB=%.6f\n",
                size, t_min, t_max, balance->t_mean, balance->factor);
         fflush(stdout);
