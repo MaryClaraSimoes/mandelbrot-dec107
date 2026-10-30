@@ -16,7 +16,7 @@ Convenções
 * Speedup = T_serial / T_paralelo ; Eficiência = Speedup / p.
 * Weak scaling: eficiência fraca = T(p=1) / T(p), com T(p=1) = média das
   repetições com p=1 da mesma estratégia/política.
-* f_lb (MPI) e λ (OpenMP) são a mesma métrica: t_max / t_mean (1.0 = ideal).
+* λ (MPI) = (t_max - t_min) / t_max (0.0 = ideal).
 * Referências (ideal / serial): quando a referência distorce a escala do
   gráfico (ref_max / topo_dados > LIMIAR_REF), são gerados DOIS arquivos:
       <nome>.png          -> só os resultados (escala ajustada aos dados)
@@ -400,6 +400,8 @@ def ref_ideal_speedup(ax):
 def ref_um(ax, rotulo):
     ax.axhline(1.0, linestyle="--", color="gray", label=rotulo)
 
+def ref_zero(ax, rotulo):
+    ax.axhline(0.0, linestyle="--", color="gray", label=rotulo)
 
 def formatar_p(ax, ps=P_COMUNS):
     ax.set_xscale("log", base=2)
@@ -425,6 +427,8 @@ def builder_strong_mpi(campo, ylabel, titulo, ref):
                     ref_ideal_speedup(ax)
                 elif ref == "um":
                     ref_um(ax, "ideal (100%)" if campo == "efic" else "ideal (1.0)")
+                elif ref == "zero":
+                     ref_zero(ax, "ideal (0.0)")
                 elif ref == "serial":
                     ts = next(r["t_serial"] for r in resumo_mpi if r["cenario"] == cen)
                     ax.axhline(ts, linestyle="--", color="gray", label="serial")
@@ -452,9 +456,9 @@ salvar("time_strong_mpi",
        builder_strong_mpi("tempo", "Tempo médio (s)", "MPI — Tempo vs Processos", "serial"),
        ref_max=t_serial_max)
 salvar("lambda_strong_mpi",
-       builder_strong_mpi("flb", "f_lb (t_max / t_mean)",
-                          "MPI — Fator de balanceamento vs Processos", "um"),
-       ref_max=1.0)
+       builder_strong_mpi("flb", "f_lb ((t_max - t_min) / t_max)",
+                          "MPI — Fator de balanceamento vs Processos", "zero"),
+       ref_max=0.0)
 
 
 # ---------------------------------------------------------------
@@ -511,6 +515,10 @@ if any(r["cenario"] == "weak" for r in resumo_mpi):
            builder_weak_mpi("efic_fraca", "Eficiência fraca T(1)/T(p)",
                             "MPI — Weak Scaling: eficiência", "um"),
            ref_max=1.0)
+    salvar("weak_scaling_mpi_lambda",
+           builder_weak_mpi("flb", "f_lb ((t_max - t_min) / t_max)",
+                            "MPI — Weak Scaling: Fator de balanceamento", "zero"), 
+           ref_max=0.0)
 
 
 # ---------------------------------------------------------------
@@ -568,10 +576,6 @@ if TEM_OMP:
            ref_max=max(P_COMUNS))
     salvar("cmp_efficiency",
            builder_cmp("efic", "Eficiência", "OpenMP × MPI — Eficiência", "um"),
-           ref_max=1.0)
-    salvar("cmp_lambda",
-           builder_cmp("flb", "λ / f_lb (t_max / t_mean)",
-                       "OpenMP × MPI — Fator de balanceamento", "um"),
            ref_max=1.0)
 
     # Weak scaling: eficiência fraca OpenMP x MPI
