@@ -1,0 +1,9 @@
+# Diretórios de saída e binários compilados da Etapa 3 (CUDA)
+bin/
+output/
+
+# Objetos e artefatos temporários
+*.o
+*.bin
+*.pgm
+*.ppm
