@@ -19,10 +19,11 @@ OUT_DIR = output
 SERIAL_BIN  = $(BIN_DIR)/mandelbrot_serial
 CUDA_BIN    = $(BIN_DIR)/mandelbrot_cuda
 COMPARE_BIN = $(BIN_DIR)/compare
+BENCH_BIN   = $(BIN_DIR)/mandelbrot_bench
 
-.PHONY: all serial cuda compare clean
+.PHONY: all serial cuda compare bench clean
 
-all: serial cuda compare
+all: serial cuda compare 
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
@@ -35,6 +36,17 @@ cuda: $(BIN_DIR)
 
 compare: $(BIN_DIR)
 	$(CC) $(CFLAGS) scripts/compare_matrices.c -o $(COMPARE_BIN)
+
+# ---------------------------------------------------------------------------
+# Harness de benchmark + variantes de otimizacao (Parte 2, Integrante 2).
+# -lineinfo  : apenas debug-info; nao altera o codigo gerado, so permite ao
+#              ncu/nsys mapear metricas para linhas do fonte.
+# -Isrc      : garante que "common.h" seja encontrado mesmo se o arquivo for
+#              compilado de outro diretorio.
+# ---------------------------------------------------------------------------
+bench: $(BIN_DIR) src/mandelbrot_bench.cu src/common.h
+	$(NVCC) $(NVFLAGS) -lineinfo -Isrc src/mandelbrot_bench.cu -o $(BENCH_BIN)
+	$(NVCC) $(NVFLAGS) -lineinfo -Isrc -DUSE_CONST_PARAMS $< -o bin/mandelbrot_bench_const
 
 clean:
 	rm -rf $(BIN_DIR) $(OUT_DIR)
