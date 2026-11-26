@@ -3,9 +3,9 @@
 # ==============================================================================
 
 # Arquitetura alvo da GPU (ajuste conforme sua GPU e versao do nvcc):
-#   Exemplos: sm_75 (Turing), sm_86 (Ampere), sm_89 (Ada / compatibilidade PTX
-#   no CUDA 12.0 para GPUs Blackwell sm_120 como a RTX 5050 Laptop GPU).
-ARCH ?= sm_89
+#   Exemplos: sm_75 (Turing), sm_86 (Ampere), sm_89 (Ada), sm_120 (Blackwell,
+#   RTX 5050 Laptop GPU com CUDA Toolkit >= 12.8 / 13.2).
+ARCH ?= sm_120
 
 CC      = gcc
 NVCC    = nvcc
@@ -46,7 +46,7 @@ compare: $(BIN_DIR)
 # ---------------------------------------------------------------------------
 bench: $(BIN_DIR) src/mandelbrot_bench.cu src/common.h
 	$(NVCC) $(NVFLAGS) -lineinfo -Isrc src/mandelbrot_bench.cu -o $(BENCH_BIN)
-	$(NVCC) $(NVFLAGS) -lineinfo -Isrc -DUSE_CONST_PARAMS $< -o bin/mandelbrot_bench_const
+	$(NVCC) $(NVFLAGS) -lineinfo -Isrc -DUSE_CONST_PARAMS src/mandelbrot_bench.cu -o $(BIN_DIR)/mandelbrot_bench_const
 
 clean:
 	rm -rf $(BIN_DIR) $(OUT_DIR)

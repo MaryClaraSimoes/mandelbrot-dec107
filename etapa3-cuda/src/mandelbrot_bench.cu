@@ -105,6 +105,23 @@ __global__ void k_naive(int *__restrict__ out, KParams p, int row0, int row1) {
     out[py * K.width + px] = iter;
 }
 
+/* grid-stride: permite variar o numero de blocos/threads ativos sobre a mesma grade */
+__global__ void k_naive_stride(int *__restrict__ out, KParams p, int row0, int row1) {
+    const KParams &K = KP(p);
+    const size_t start = (size_t)row0 * (size_t)K.width + (size_t)blockIdx.x * blockDim.x + threadIdx.x;
+    const size_t end   = (size_t)row1 * (size_t)K.width;
+    const size_t step  = (size_t)gridDim.x * (size_t)blockDim.x;
+    for (size_t lin = start; lin < end; lin += step) {
+        int px = (int)(lin % (size_t)K.width);
+        int py = (int)(lin / (size_t)K.width);
+        double cr, ci, zr = 0.0, zi = 0.0, zr2 = 0.0, zi2 = 0.0;
+        int iter = 0;
+        get_c(K, px, py, &cr, &ci);
+        while (iter < K.max_iter && INSIDE(zr2, zi2)) { STEP(zr, zi, zr2, zi2, cr, ci); iter++; }
+        out[lin] = iter;
+    }
+}
+
 /* warp: early-exit por warp. O warp inteiro sai quando NENHUM lane esta ativo
  * (__any_sync). Todos os 32 lanes devem executar o __any_sync, entao threads fora
  * da imagem NAO retornam cedo: participam com active=0. Bloco multiplo de 32. */
@@ -180,7 +197,7 @@ static const char *VNAME[] = {"base", "naive", "warp", "compact"};
 static const char *MNAME[] = {"sync", "pinned", "streams"};
 
 typedef struct {
-    int variant, bx, by, oneD, ctab, mode, streams, chunk, warmup, reps, verify;
+    int variant, bx, by, oneD, ctab, mode, streams, chunk, grid_blocks, warmup, reps, verify;
     const char *csv, *group, *scenario;
 } Opt;
 
@@ -218,7 +235,7 @@ static double host_c(int i, double minv, double denom, double range) {
     return minv + m;
 }
 
-static void launch(int v, int bx, int by, int r0, int r1, int chunk, cudaStream_t s) {
+static void launch(int v, int bx, int by, int r0, int r1, int chunk, int grid_blocks, cudaStream_t s) {
     int rows = r1 - r0, T = bx * by;
     dim3 b = kp.oneD ? dim3(T, 1, 1) : dim3(bx, by, 1);
     dim3 g = kp.oneD ? dim3((rows * kp.width + T - 1) / T, 1, 1)
@@ -228,7 +245,11 @@ static void launch(int v, int bx, int by, int r0, int r1, int chunk, cudaStream_
         dim3 b2(bx, by, 1), g2((kp.width + bx - 1) / bx, (kp.height + by - 1) / by, 1);
         k_base<<<g2, b2, 0, s>>>(d_out, kp.width, kp.height, kp.xmin, kp.xmax, kp.ymin, kp.ymax, kp.max_iter);
     } else if (v == V_NAIVE) {
-        k_naive<<<g, b, 0, s>>>(d_out, kp, r0, r1);
+        if (grid_blocks > 0) {
+            k_naive_stride<<<dim3(grid_blocks, 1, 1), dim3(T, 1, 1), 0, s>>>(d_out, kp, r0, r1);
+        } else {
+            k_naive<<<g, b, 0, s>>>(d_out, kp, r0, r1);
+        }
     } else if (v == V_WARP) {
         k_warp<<<g, b, 0, s>>>(d_out, kp, r0, r1);
     } else {
@@ -247,7 +268,7 @@ static Timing run_rep(const Opt *o, int variant, int bx, int by, int mode, int *
     double t1 = now_sec();
     if (mode != M_STREAMS) {
         CUDA_CHECK(cudaEventRecord(ev0, 0));
-        launch(variant, bx, by, 0, kp.height, o->chunk, 0);
+        launch(variant, bx, by, 0, kp.height, o->chunk, o->grid_blocks, 0);
         CUDA_CHECK(cudaEventRecord(ev1, 0));
         CUDA_CHECK(cudaGetLastError());
         CUDA_CHECK(cudaEventSynchronize(ev1));
@@ -261,7 +282,7 @@ static Timing run_rep(const Opt *o, int variant, int bx, int by, int mode, int *
         for (int s = 0; s < nstreams; s++) {
             int r0 = (int)((long long)kp.height * s / nstreams), r1 = (int)((long long)kp.height * (s + 1) / nstreams);
             if (r1 <= r0) continue;
-            launch(variant, bx, by, r0, r1, o->chunk, strm[s]);
+            launch(variant, bx, by, r0, r1, o->chunk, o->grid_blocks, strm[s]);
             CUDA_CHECK(cudaMemcpyAsync(h_out + (size_t)r0 * kp.width, d_out + (size_t)r0 * kp.width,
                                        (size_t)(r1 - r0) * kp.width * sizeof(int), cudaMemcpyDeviceToHost, strm[s]));
         }
@@ -281,25 +302,26 @@ static int index_of(const char **names, int n, const char *s) {
 }
 
 int main(int argc, char **argv) {
-    Opt o = {V_NAIVE, 16, 16, 0, 0, M_SYNC, 4, 64, 2, 7, 1, NULL, "adhoc", "adhoc"};
+    Opt o = {V_NAIVE, 16, 16, 0, 0, M_SYNC, 4, 64, 0, 2, 7, 1, NULL, "adhoc", "adhoc"};
     char **rest = (char **)malloc((size_t)argc * sizeof(char *));
     int nrest = 0;
     rest[nrest++] = argv[0];
     for (int i = 1; i < argc; i++) {                          /* opcoes proprias; o resto vai a parse_args */
         const char *a = argv[i], *v = (i + 1 < argc) ? argv[i + 1] : NULL;
-        if (!strcmp(a, "--variant") && v)       { o.variant = index_of(VNAME, 4, v); i++; }
-        else if (!strcmp(a, "--mode") && v)     { o.mode = index_of(MNAME, 3, v); i++; }
-        else if (!strcmp(a, "--block") && v)    { if (sscanf(v, "%dx%d", &o.bx, &o.by) != 2) die("--block espera BXxBY"); i++; }
-        else if (!strcmp(a, "--layout") && v)   { o.oneD = !strcmp(v, "1d"); i++; }
-        else if (!strcmp(a, "--streams") && v)  { o.streams = atoi(v); i++; }
-        else if (!strcmp(a, "--chunk") && v)    { o.chunk = atoi(v); i++; }
-        else if (!strcmp(a, "--warmup") && v)   { o.warmup = atoi(v); i++; }
-        else if (!strcmp(a, "--reps") && v)     { o.reps = atoi(v); i++; }
-        else if (!strcmp(a, "--csv") && v)      { o.csv = v; i++; }
-        else if (!strcmp(a, "--group") && v)    { o.group = v; i++; }
-        else if (!strcmp(a, "--scenario") && v) { o.scenario = v; i++; }
-        else if (!strcmp(a, "--ctab"))          o.ctab = 1;
-        else if (!strcmp(a, "--no-verify"))     o.verify = 0;
+        if (!strcmp(a, "--variant") && v)           { o.variant = index_of(VNAME, 4, v); i++; }
+        else if (!strcmp(a, "--mode") && v)         { o.mode = index_of(MNAME, 3, v); i++; }
+        else if (!strcmp(a, "--block") && v)        { if (sscanf(v, "%dx%d", &o.bx, &o.by) != 2) die("--block espera BXxBY"); i++; }
+        else if (!strcmp(a, "--layout") && v)       { o.oneD = !strcmp(v, "1d"); i++; }
+        else if (!strcmp(a, "--streams") && v)      { o.streams = atoi(v); i++; }
+        else if (!strcmp(a, "--chunk") && v)        { o.chunk = atoi(v); i++; }
+        else if (!strcmp(a, "--grid-blocks") && v)  { o.grid_blocks = atoi(v); i++; }
+        else if (!strcmp(a, "--warmup") && v)       { o.warmup = atoi(v); i++; }
+        else if (!strcmp(a, "--reps") && v)         { o.reps = atoi(v); i++; }
+        else if (!strcmp(a, "--csv") && v)          { o.csv = v; i++; }
+        else if (!strcmp(a, "--group") && v)        { o.group = v; i++; }
+        else if (!strcmp(a, "--scenario") && v)     { o.scenario = v; i++; }
+        else if (!strcmp(a, "--ctab"))              o.ctab = 1;
+        else if (!strcmp(a, "--no-verify"))         o.verify = 0;
         else rest[nrest++] = argv[i];
     }
     MandelbrotParams mp;
@@ -362,6 +384,8 @@ int main(int argc, char **argv) {
            : o.variant == V_WARP ? "early-exit por warp (__any_sync)" : "tile + compactacao de pixels ativos",
            o.oneD ? "1D" : "2D", o.ctab ? "host (tabelas)" : "device", params_s);
     printf("Bloco      : %dx%d (%d threads)\n", o.bx, o.by, T);
+    if (o.grid_blocks > 0 && o.variant == V_NAIVE)
+        printf("Grid-stride: %d blocos (%d threads totais)\n", o.grid_blocks, o.grid_blocks * T);
     printf("Modo       : %s", MNAME[o.mode]);
     if (o.mode == M_STREAMS) printf("  (%d streams)", nstreams);
     if (o.variant == V_COMPACT) printf("  chunk=%d", o.chunk);
@@ -415,6 +439,8 @@ int main(int argc, char **argv) {
     }
     printf("TOTAL pipeline (wall) : %10.3f ms   [min %.3f, max %.3f]\n", tot, t0, t1);
     printf("Escrita em disco      : %10.3f ms   (fora das medicoes acima)\n", write_ms);
+    if (write_ms > 0.0)
+        printf("TOTAL c/ escrita disco: %10.3f ms\n", tot + write_ms);
 
     if (o.csv) {
         ensure_parent_dir(o.csv);

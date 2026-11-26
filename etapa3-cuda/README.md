@@ -183,4 +183,12 @@ Utilize o binário `./bin/compare` passando a matriz serial de referência e a m
 ./bin/compare output/serial_zoom.bin output/cuda_zoom.bin
 ```
 
-O programa imprime o total de pixels, o número e o percentual de pixels divergentes, a maior diferença absoluta em iterações e o veredito (`PASS` com código de retorno `0`, ou `FAIL` com código `1`). Os resultados detalhados da validação encontram-se em [`docs/validacao.md`](docs/validacao.md).
+O programa imprime o total de pixels, o número e o percentual de pixels divergentes, a maior diferença absoluta em iterações e o veredito (`PASS` com código de retorno `0`, ou `FAIL` com código `1`). Os resultados detalhados da validação encontram-se em [`docs/validacao.md`](docs/validacao.md), o detalhamento das otimizações da Parte 2 em [`docs/parte2_tuning.md`](docs/parte2_tuning.md) e o relatório completo da Etapa 3 em [`docs/relatorio_etapa3.md`](docs/relatorio_etapa3.md).
+
+---
+
+## 7. Nota de Transparência sobre o Uso de IA
+
+**Nota de Transparência sobre o Uso de IA:** Declaramos que este projeto contou com o auxílio das ferramentas de IA Claude, Cursor e Antigravity exclusivamente para as tarefas de revisão gramatical, estruturação do relatório técnico, auxílio na depuração (*debugging*) e geração de scripts base de automação experimental e visualização de gráficos. Como autores, atestamos que revisamos, testamos e validamos criticamente todo o conteúdo gerado, assumindo total e exclusiva responsabilidade pela correção lógica do código, precisão dos relatórios de desempenho e integridade acadêmica do material entregue.
+
+Breno Arouca Nascimento, Emyle Santana da Silva e Maria Clara Simões de Jesus – 24 de novembro de 2026
